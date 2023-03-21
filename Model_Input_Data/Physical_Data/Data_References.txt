@@ -1,0 +1,6 @@
+"tot_sst.RData": Huang, B., Thorne, P. W., Banzon, V. F., Boyer, T., Chepurin, G., Lawrimore, J. H. et al. (2017). Extended Reconstructed Sea Surface 
+Temperature, Version 5 (ERSSTv5): upgrades, validations, and intercomparisons. Journal of Climate, 30, 8179-8205
+
+"EnvData_Henrike_NS_RCP45.csv", "EnvData_Henrike_NS_RCP85.csv" and "Henrike_Thuenen_Historical_Extracted_AllVars/": Peck, M. A., Catalán, I. A., Damalas, D., 
+Elliott, M., Ferreira, J. G., Hamon, K. G. et al. (2020). Cllimate change and European fisheries and aquaculture. CERES Project Synthesis Report, 
+Universität Hamburg, Hamburg (DE), 110 pp.
