@@ -1,0 +1,120 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Complete Markdown
+
+```{r}
+# 1) Load required packages
+
+library('tidyverse')
+library('minpack.lm')
+library('pdp')
+
+options(scipen = 999)
+```
+
+```{r}
+rm(list = ls())
+```
+
+```{r}
+# 2) Set constants
+
+start_year <- 1963 # first year of stock data
+stop_year <- 2018 # final year of stock data
+stock_code <- 'nsTmean' # code word required for subsetting past SST data
+```
+
+```{r}
+# 3) Load and prepare stock- and SST data required for fitting the stock-recruitment model
+
+dat <- read.table("/home/jan/PhD/Data/Lindegren_Papers/Cod_North_Sea/R_SSB.txt",header=T) # SSB- and recruitment data
+
+assign('SST_NOAA', get(load('/home/jan/PhD/Data/Physical_Data/tot_sst.RData'))) # SST data (multiple areas) (Huang et al., 2017)
+
+sst <- as.data.frame(cbind(SST_NOAA$Year, eval(parse(text = paste0('SST_NOAA$', stock_code))))) # subsetting SST data for the North Sea
+sst <- sst[sst$V1 %in% seq(start_year, stop_year, 1),] # limiting SST data to the time frame covered by the stock data
+
+names(sst) <- c('year', 'mean_sst')
+
+x <- dat$SSB[1:55] # SSB data (lag of 1 year on recruitment)
+x2 <- sst$mean_sst[1:55] # SST data (lag of 1 year on recruitment)
+y <- dat$Recruits[2:56] # recruitment data
+```
+
+```{r}
+# 4) Fitting and plotting the Ricker stock-recruitment model (Ricker, 1975)
+
+mod <- nlsLM(log(y/x) ~ log_ac - exp(log_bc) * x - cc * x2, control = list(maxiter = Inf)) # fitting the Ricker model (note that a re-arranged equation is used here; for details see manuscript)
+
+pp <- partial(mod, pred.var = c('x', 'x2'), train = as.data.frame(cbind(x,x2,y)))
+pp$pred_x2 <- exp(pp$yhat) * pp$x
+
+pp_x <- pp%>%group_by(x)%>%summarize(yhat = mean(yhat))
+pp_x2 <- pp%>%group_by(x2)%>%summarize(pred_x2 = mean(pred_x2)) # generating partial-effects predictions for SSB and SST
+
+tiff(filename = "/home/jan/PhD/EMA/North_Sea_Paper/ssb_r_ricker.tiff",
+     width = 5,height = 5,compression = "lzw",res = 600, units = "in")
+ggplot() + # plotting the SSB-recruitment relationship and the partial effect of SSB
+  geom_point(aes(x/1000, y/1000)) +
+  geom_line(aes(pp_x$x / 1000, exp(pp_x$yhat) * pp_x$x / 1000), color = 'red') +
+  xlab('SSB [kt]') + ylab(expression(paste('Recruitment [N * ', 10^{6}, ']'))) + theme_bw() + theme(text = element_text(size = 15))
+dev.off()
+
+tiff(filename = "/home/jan/PhD/EMA/North_Sea_Paper/sst_r_ricker.tiff",
+     width = 5,height = 5,compression = "lzw",res = 600, units = "in")
+ggplot() + # plotting the SST-recruitment relationship and the partial effect of SST
+      geom_point(aes(x2, y/1000)) +
+      geom_line(aes(pp_x2$x2, pp_x2$pred_x2 / 1000), color = 'red') +
+      xlab('SST [°C]') + ylab(expression(paste('Recruitment [N * ', 10^{6}, ']'))) + theme_bw() + theme(text = element_text(size = 15))
+dev.off()
+
+coefs <- rbind(summary(mod)$coefficients[1:3], summary(mod)$coefficients[4:6]) # extracting the model parameters (log_alpha, log_beta and gamma) from the model
+```
+
+```{r}
+# 4) Fitting and plotting the Beverton-Holt stock-recruitment model (Hilborn & Walters, 1992)
+
+mod <- nlsLM(log(y) ~ cc * x2 + (log_ac + log(x)) - log(1 + exp(log_bc + log(x))), control = list(maxiter = Inf)) # fitting the Ricker model (note that a re-arranged equation is used here; for details see manuscript)
+
+tiff(filename = "/home/jan/PhD/EMA/North_Sea_Paper/ssb_r_bevertonh.tiff",
+     width = 5,height = 5,compression = "lzw",res = 600, units = "in")
+ggplot() + # plotting the SSB-recruitment relationship and the partial effect of SSB
+    geom_point(aes(x/1000, y/1000)) +
+    geom_line(aes(partial(mod, pred.var = 'x', train = as.data.frame(cbind(x,x2,y)))$x / 1000, exp(partial(mod, pred.var = 'x', train = as.data.frame(cbind(x,x2,y)))$yhat) / 1000), color = 'red') +
+    xlab('SSB [kt]') + ylab(expression(paste('Recruitment [N * ', 10^{6}, ']'))) + theme_bw() + theme(text = element_text(size = 15))
+dev.off()
+
+tiff(filename = "/home/jan/PhD/EMA/North_Sea_Paper/sst_r_bevertonh.tiff",
+     width = 5,height = 5,compression = "lzw",res = 600, units = "in")
+ggplot() + # plotting the SST-recruitment relationship and the partial effect of SST
+    geom_point(aes(x2, y/1000)) +
+    geom_line(aes(partial(mod, pred.var = 'x2', train = as.data.frame(cbind(x,x2,y)))$x2, exp(partial(mod, pred.var = 'x2', train = as.data.frame(cbind(x,x2,y)))$yhat) / 1000), color = 'red') +
+    xlab('SST [°C]') + ylab(expression(paste('Recruitment [N * ', 10^{6}, ']'))) + theme_bw() + theme(text = element_text(size = 15))
+dev.off()
+
+coefs <- rbind(coefs, rbind(summary(mod)$coefficients[c(2,3,1)], summary(mod)$coefficients[c(5,6,4)])) # extracting the model parameters (log_alpha, log_beta and gamma) from the model
+
+write.table(coefs, file = '/home/jan/PhD/EMA/North_Sea_Paper/sr_coefs.csv', col.names = F, row.names = F, sep = '\t') # saving the parameters to disk
+
+print(coefs)
+```
+
+```{r}
+# 5) References
+
+# - Hilborn, R. & Walters, C. J. (1992). Quantitative Fisheries Stock Assessment. Choice, Dynamics and Uncertainty. Chapman and Hall, London, 
+# 570 pp.
+# - Huang, B., Thorne, P. W., Banzon, V. F., Boyer, T., Chepurin, G., Lawrimore, J. H. et al. (2017). Extended Reconstructed Sea Surface
+# Temperature, Version 5 (ERSSTv5): upgrades, validations, and intercomparisons. Journal of Climate, 30, 8179-8205
+# - Ricker, W. E. (1975). Computation and interpretation of biological statistics of fish populations. Bulletin - Fisheries Research Board of
+# Canada, 191, 382
+```
+
+
