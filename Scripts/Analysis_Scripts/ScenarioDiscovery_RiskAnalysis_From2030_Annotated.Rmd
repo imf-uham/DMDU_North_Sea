@@ -241,20 +241,20 @@ dev.off()
 ```
 
 ```{r}
-# 7) Plot the median projected recruitment and SSB over projection years for both climate scenarios
+# 7) Plot the median projected recruitment and SSB for a single policy over projection years for both climate scenarios
 
 tiff(filename = "/home/jan/PhD/EMA/North_Sea_Paper/med_recruitment.tiff",
      width = 5,height = 5,compression = "lzw",res = 600, units = "in")
-ggplot(dat%>%ungroup()%>%filter(metric == 'n_age_1_year')%>%select(year, RCP, val)%>%group_by(year, RCP)%>%mutate(md_recr = median(val), q25_recr= quantile(val, 0.25, names = F), q75_recr = quantile(val, 0.75, names = F))%>%ungroup()%>%select(-val)%>%distinct()) + 
-  geom_ribbon(aes(year, ymin = q25_recr / 1e+3, ymax = q75_recr / 1e+3, fill = RCP, group = RCP), alpha = 0.5, show.legend = F) + 
-  geom_line(aes(year, md_recr / 1e+3, color = RCP, group = RCP), show.legend = F) + 
-  xlab('Year') + ylab(expression(paste('Recruits [',10^{6},']'))) + theme_bw() + theme(text = element_text(size = 15)) + 
-  scale_color_viridis(discrete = T, direction = -1, option = 'plasma', begin = 0.2, end = 0.8) + scale_fill_viridis(discrete = T, direction = -1, option = 'plasma', begin = 0.2, end = 0.8)
+ggplot(dat%>%ungroup()%>%filter(metric == 'n_age_1_year' & manage_cat == 'harvest' & manage_val == unique(manage_val[manage_cat == 'harvest'])[4])%>%select(year, RCP, val)%>%group_by(year, RCP)%>%mutate(md_recr = median(val), q25_recr= quantile(val, 0.25, names = F), q75_recr = quantile(val, 0.75, names = F))%>%ungroup()%>%select(-val)%>%distinct()) + 
+    geom_ribbon(aes(year, ymin = q25_recr / 1e+3, ymax = q75_recr / 1e+3, fill = RCP, group = RCP), alpha = 0.5, show.legend = F) + 
+    geom_line(aes(year, md_recr / 1e+3, color = RCP, group = RCP), show.legend = F) + 
+    xlab('Year') + ylab(expression(paste('Recruits [',10^{6},']'))) + theme_bw() + theme(text = element_text(size = 15)) + 
+    scale_color_viridis(discrete = T, direction = -1, option = 'plasma', begin = 0.2, end = 0.8) + scale_fill_viridis(discrete = T, direction = -1, option = 'plasma', begin = 0.2, end = 0.8)
 dev.off()
 
 tiff(filename = "/home/jan/PhD/EMA/North_Sea_Paper/med_ssb.tiff",
      width = 5,height = 5,compression = "lzw",res = 600, units = "in")
-ggplot(dat%>%ungroup()%>%filter(metric == 'ssb_year')%>%select(year, RCP, val)%>%group_by(year, RCP)%>%mutate(md_ssb = median(val), q25_ssb = quantile(val, 0.25, names = F), q75_ssb = quantile(val, 0.75, names = F))%>%ungroup()%>%select(-val)%>%distinct()) + 
+ggplot(dat%>%ungroup()%>%filter(metric == 'ssb_year' & manage_cat == 'harvest' & manage_val == unique(manage_val[manage_cat == 'harvest'])[4])%>%select(year, RCP, val)%>%group_by(year, RCP)%>%mutate(md_ssb = median(val), q25_ssb = quantile(val, 0.25, names = F), q75_ssb = quantile(val, 0.75, names = F))%>%ungroup()%>%select(-val)%>%distinct()) + 
   geom_ribbon(aes(year, ymin = q25_ssb / 1e+3, ymax = q75_ssb / 1e+3, fill = RCP, group = RCP), alpha = 0.5, show.legend = F) + 
   geom_line(aes(year, md_ssb / 1e+3, color = RCP, group = RCP), show.legend = F) + 
   xlab('Year') + ylab('SSB [kt]') + theme_bw() + theme(text = element_text(size = 15)) + 
@@ -269,7 +269,7 @@ dat <- dat[dat$metric != 'n_age_1_year',]
 ```{r, fig.width=5, fig.height=5}
 # 8) Load and plot modeled historical profit data
 
-profit_past <- read.csv('/home/jan/PhD/EMA/North_Sea_Paper/profit_north_sea.csv') # load modeled historical profit data (calculated with economic model presented by Schenk et al. (in prep.)) (see model script for details)
+profit_past <- read.csv('/home/jan/PhD/EMA/North_Sea_Paper/profit_north_sea.csv') # load modeled historical profit data (calculated with economic model presented by Schenk et al., 2023) (see model script for details)
 
 tiff(filename = "/home/jan/PhD/EMA/North_Sea_Paper/past_profit.tiff",
      width = 5,height = 5,compression = "lzw",res = 600, units = "in")
@@ -279,7 +279,7 @@ ggplot(profit_past) +
   theme_bw() + theme(text = element_text(size = 15)) # plot the modeled historical profit data
 dev.off()
 
-mn_past_profit <- 107.97 # set custom profitability reference point (average profit of years 2000-2019; see model script for details)
+mn_past_profit <- 71.96515034499998 # set custom profitability reference point (minimum historic profit; see model script for details)
 ```
 
 ```{r}
@@ -378,9 +378,10 @@ tiff(filename = "/home/jan/PhD/EMA/North_Sea_Paper/profit_risk_harvest.tiff",
 ggplot(distinct(dat%>%filter(manage_cat == 'harvest')%>%select(manage_val_class, profit_risk_mn, decade_class))) + geom_line(aes(manage_val_class*100, profit_risk_mn*100, color = factor(decade_class, levels = c('Mid-century (2030-2049)', 'Late century (2050-2099)'))), show.legend = F) + xlab('Harvest rate [%]') + ylab('Profitability risk [%]') + scale_color_viridis(direction = -1, 'Period', option = 'plasma', discrete = T, begin = 0.2, end = 0.8) + theme_bw() + theme(text = element_text(size = 15)) + ylim(c(0,100))
 dev.off() # plotting profitability risk, for each projection period, for projections done with i) fixed catch and ii) fixed harvest rate
 
- best_troffs <- dat%>%ungroup()%>%select(manage_cat, decade_class, manage_val_class, risk_both_mn, profit_risk_mn)%>%group_by(manage_cat, decade_class, manage_val_class)%>%summarize(add_risk = profit_risk_mn + risk_both_mn)%>%ungroup()%>%group_by(manage_cat, decade_class)%>%filter(add_risk == min(add_risk))%>%distinct() # calculate the policy levels associated with "best trade-off", i.e. the level of intended catch and intended harvest rate yielding the lowest additive risks (sustainability- and profitability risks)
- 
-best_troffs <- best_troffs%>%ungroup()%>%select(-add_risk)%>%rename(best_manage = manage_val_class)
+best_troffs <- dat%>%ungroup()%>%select(manage_cat, decade_class, manage_val_class, risk_both_mn, profit_risk_mn)%>%group_by(manage_cat, decade_class, manage_val_class)%>%summarize(risk_diff = abs(1 - profit_risk_mn/risk_both_mn), add_risk = profit_risk_mn + risk_both_mn)%>%ungroup()%>%group_by(manage_cat, decade_class)%>%mutate(risk_diff = risk_diff/max(risk_diff), add_risk = add_risk/max(add_risk))%>%mutate(both_risk = risk_diff + add_risk)%>%ungroup()%>%group_by(manage_cat, decade_class)%>%filter(both_risk == min(both_risk))%>%distinct() # calculate the policy levels associated with "best trade-off", i.e. the level of intended catch and intended harvest rate yielding the lowest additive risks (sustainability- and profitability risks) and yielding the lowest difference from a ratio of 1 between the two risk types (criteria are added to determine exploitation level of best trade-off)
+
+best_troffs <- best_troffs%>%ungroup()%>%select(-c(add_risk, risk_diff, both_risk))%>%rename(best_manage = manage_val_class)
+
 dat <- full_join(dat, best_troffs, by = c('manage_cat', 'decade_class'))
 print(best_troffs)
 
@@ -528,5 +529,6 @@ print(
 
 # - Huang, B., Thorne, P. W., Banzon, V. F., Boyer, T., Chepurin, G., Lawrimore, J. H. et al. (2017). Extended Reconstructed Sea Surface Temperature, Version 5 (ERSSTv5): upgrades, validations, and intercomparisons. Journal of Climate, 30, 8179-8205
 # - Peck, M. A., Catalán, I. A., Damalas, D., Elliott, M., Ferreira, J. G., Hamon, K. G. et al. (2020). Cllimate change and European fisheries and aquaculture. CERES Project Synthesis Report, Universität Hamburg, Hamburg (DE), 110 pp.
+# - Schenk, H., Zimmermann, F. & Quaas, M. (2023). The economics of reversing fisheries-induced evolution. Nature Sustainability
 ```
 
