@@ -1,0 +1,2 @@
+- "ScenarioDiscovery_RiskAnalysis_From2030_Annotated.Rmd" is the script for conducting the scenario-, risk- and risk-trade-off analyses.
+- "Feature_Scoring_Annotated.py" is the script for conducting the feature-scoring analysis.
