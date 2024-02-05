@@ -1,0 +1,2 @@
+All data included in this directory: ICES (2021). Cod (Gadus morhua) in Subarea 4, Division 7.d, and Subdivision (North Sea, eastern English Channel, Skagerrak). 
+ICES Working Group on the Assessment of Demersal Stocks in the North Sea and Skagerrak, 3 (66), 79-162. doi: 10.17895/ices.pub.8211
