@@ -1,2 +1,4 @@
 - "North_Sea_From2030_NewEconModel_Annotated.py" is the script for the population model and for doing the RDM multi-scenario modeling.
+- "North_Sea_From2030_NewEconModel_Annotated_ZeroHarvest.py" - same as above for conducting model runs with zero catch or zero harvest rate.
 - "SR_Model_Fitting_Annotated.Rmd" is the script for fitting the SR model and obtaining the parameter-value ranges used in the population model.
+- "Compared_SRMods_SRSegReg.R" is the script for fitting various stock-recruitment functions with and without SST as covariate, and for comparing them
