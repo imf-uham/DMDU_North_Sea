@@ -1,2 +1,4 @@
 - "ScenarioDiscovery_RiskAnalysis_From2030_Annotated.Rmd" is the script for conducting the scenario-, risk- and risk-trade-off analyses.
+- "ScenarioDiscovery_RiskAnalysis_From2030_Annotated_AnnualRisk.Rmd" - same as above, with code added for plotting risk over projection years
+- "ScenarioDiscovery_RiskAnalysis_From2030_Annotated_ZeroHarvest.Rmd" - same as above for model runs conducted with zero catch or zero harvest rate
 - "Feature_Scoring_Annotated.py" is the script for conducting the feature-scoring analysis.
