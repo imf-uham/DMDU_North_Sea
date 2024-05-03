@@ -13,6 +13,9 @@ model output noted above. This script should be run in interactive mode (e.g. in
 
 "ScenarioDiscovery_RiskAnalysis_From2030_Annotated.Rmd" conducts the remaining analyses of the model 
 output. The script should be run in interactive mode (e.g. in IDE RStudio).
+There is now an additional file that contains code for plotting risk dynamics over projection years,
+and an additional file that plots such risk time series for model runs conducted with zero catch or
+zero harvest rate.
 
 The folder "input_data" contains all data required to fit the SR models and to initialize and run the
 population model. The model output data are available on https://zenodo.org/records/10617806.
