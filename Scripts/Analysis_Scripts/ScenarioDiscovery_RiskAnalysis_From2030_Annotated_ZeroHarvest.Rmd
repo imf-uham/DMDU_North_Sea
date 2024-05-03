@@ -1,0 +1,124 @@
+---
+title: "Untitled"
+output: html_document
+date: "2024-04-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# 1) Load required packages
+
+library('tidyverse')
+```
+
+```{r}
+# 2) Set constants
+
+start_year <- 1963 # first year of observed time series
+stop_year <- 2018 # final year of observed time series
+stop_year_fut = 2100 # final year of projections
+btrigger = 97777 # MSY Btrigger management reference value
+fmsy = 0.28 # FMSY management reference value
+stock_code <- 'nsTmean' # code word required for subsetting past SST data
+bar_low <- 2 # lower age class contributing to Fbar
+bar_high <- 4 # upper age class contributing to Fbar
+```
+
+```{r}
+# 3) Load projection outputs
+
+rk_catch <- read.csv('/home/jan/PhD/EMA/North_Sea_Paper/North_Sea_Submission_2ndTry/Revision/ZeroHarvest/Catch_Ricker_ZeroHarvest.csv')
+rk_catch_params <- read.csv('/home/jan/PhD/EMA/North_Sea_Paper/Catch_Ricker_Params.csv')
+rk_catch <- as.data.frame(cbind(rk_catch[,c(1,3:ncol(rk_catch))], rk_catch_params[,2:4], rk_catch[,2], rk_catch_params[,6:ncol(rk_catch_params)]))
+
+bh_catch <- read.csv('/home/jan/PhD/EMA/North_Sea_Paper/North_Sea_Submission_2ndTry/Revision/ZeroHarvest/Catch_Bevertonh_ZeroHarvest.csv')
+bh_catch_params <- read.csv('/home/jan/PhD/EMA/North_Sea_Paper/Catch_Bevertonh_Params.csv')
+bh_catch <- as.data.frame(cbind(bh_catch[,c(1,3:ncol(bh_catch))], bh_catch_params[,2:4], bh_catch[,2], bh_catch_params[,6:ncol(bh_catch_params)]))
+```
+
+```{r}
+names(rk_catch)[ncol(rk_catch)-7] <- names(bh_catch)[ncol(bh_catch)-7] <- 'alpha'
+names(rk_catch)[ncol(rk_catch)-6] <- names(bh_catch)[ncol(bh_catch)-6] <- 'beta'
+names(rk_catch)[ncol(rk_catch)-5] <- names(bh_catch)[ncol(bh_catch)-5] <- 'gamma'
+names(rk_catch)[ncol(rk_catch)-4] <- names(bh_catch)[ncol(bh_catch)-4] <- 'manage_val'
+names(rk_catch)[ncol(rk_catch)] <- names(bh_catch)[ncol(bh_catch)] <- 'RCP'
+
+dat <- rbind(rk_catch, bh_catch)
+rm(rk_catch, bh_catch)
+gc()
+```
+
+```{r}
+# 4) Calculate Fbar and re-arrange the data
+
+for(i in 2029:(stop_year_fut-1)){
+  mean_f <- rowSums(do.call(cbind, lapply(seq(bar_low,bar_high,1), function(x){eval(parse(text = paste0("dat$f_age_",x,"_year_", i)))}))) / length(seq(bar_low,bar_high,1))
+  eval(parse(text = paste0("dat$mean_f_", i, "<- mean_f")))
+} # calculate Fbar: the mean F over age classes 2-4
+```
+
+```{r}
+# 8) Load modeled historical profit data
+
+profit_past <- read.csv('/home/jan/PhD/EMA/North_Sea_Paper/profit_north_sea.csv') # load modeled historical profit data (calculated with economic model presented by Schenk et al., 2023) (see model script for details)
+
+mn_past_profit <- 48.89296684794737 # set custom profitability reference point (average profit of years 2000-2018; see model script for details)
+```
+
+```{r}
+# 9) Plot SR parameter combinations yielding fully-sustainable scenarios (= maximum number of projected sustainable years)
+
+dat$sr_mod <- c(rep('rk', nrow(dat)/2), rep('bh', nrow(dat)/2))
+
+subs <- dat[dat$n_both==max(dat$n_both,na.rm=T),]
+subs <- subs%>%select(alpha,gamma,RCP,manage_val,sr_mod)%>%distinct()
+
+ggplot(subs) + 
+  geom_point(aes(alpha, abs(gamma), color = RCP)) + 
+  facet_wrap(~sr_mod) # scenario exploration / SR parameterizations yielding full sustainability
+```
+
+```{r}
+# 10) Calculate risk of unsustainable stock status / unsustainable / un-profitable fishing over all SR parameterizations for every projection year
+
+risk_sust_ts <- vector(length = length(seq(2030, stop_year_fut-2)))
+risk_profit_ts <- vector(length = length(seq(2030, stop_year_fut-2)))
+
+for(i in 2030:(stop_year_fut-2)){
+  risk_sust_ts[i-(2030-1)] <- eval(parse(text = paste0("mean(dat$mean_f_",i," > fmsy | dat$ssb_year_",i," <= btrigger)")))
+  risk_profit_ts[i-(2030-1)] <- eval(parse(text = paste0("mean(dat$profit_",i," < mn_past_profit)")))
+}
+```
+
+```{r}
+# 11) Plot risk time series (sustainability risk and profitability risk)
+
+tiff(filename = "/home/jan/PhD/EMA/North_Sea_Paper/sust_risk_zero_catch_annually.tiff",
+     width = 5,height = 5,compression = "lzw",res = 600, units = "in")
+ggplot() + 
+  geom_line(aes(seq(2030, stop_year_fut-2), risk_sust_ts*100)) + 
+  xlab('Year') + ylab('Sustainability risk [%]') + 
+  theme_bw() + theme(text = element_text(size = 15)) + 
+  ylim(c(0,100))
+dev.off()
+
+tiff(filename = "/home/jan/PhD/EMA/North_Sea_Paper/profit_risk_zero_catch_annually.tiff",
+     width = 5,height = 5,compression = "lzw",res = 600, units = "in")
+ggplot() + 
+  geom_line(aes(seq(2030, stop_year_fut-2), risk_profit_ts*100)) + 
+  xlab('Year') + ylab('Profit risk [%]') + 
+  theme_bw() + theme(text = element_text(size = 15)) + 
+  ylim(c(0,100))
+dev.off()
+```
+
+```{r}
+# 12) Re-run the script for the model output for constant harvest-rate scenarios
+```
+
+
+
+
