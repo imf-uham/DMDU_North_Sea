@@ -7,6 +7,8 @@ of uncertain factors and runs the model with the various policies and uncertaint
 run four times to cover the two different harvest strategies (constant catch, constant harvest rate) 
 and the two different functional types of the SR relationship (Ricker and Beverton-Holt); to this
 end, some sections of the script need to be commented or uncommented.
+An additional file runs the model with zero catch or zero harvest rate, but with the same set of 
+random uncertain parameters as generated in the above model script.
 
 "Feature_Scoring_Annotated.py" conducts a feature-scoring analysis, i.e. step (i) of the analyses of 
 model output noted above. This script should be run in interactive mode (e.g. in IDE Spyder).
@@ -16,6 +18,9 @@ output. The script should be run in interactive mode (e.g. in IDE RStudio).
 There is now an additional file that contains code for plotting risk dynamics over projection years,
 and an additional file that plots such risk time series for model runs conducted with zero catch or
 zero harvest rate.
+
+"Compared_SRMods_SRSegReg.R" fits and compares multiple stock-recruitment functions with and without
+SST as covariate.
 
 The folder "input_data" contains all data required to fit the SR models and to initialize and run the
 population model. The model output data are available on https://zenodo.org/records/10617806.
